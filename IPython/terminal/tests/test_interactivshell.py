@@ -22,6 +22,7 @@ import unittest
 from IPython.testing.decorators import skipif
 from IPython.utils import py3compat
 from IPython.testing import tools as tt
+from IPython.external import pexpect
 
 class InteractiveShellTestCase(unittest.TestCase):
     def rl_hist_entries(self, rl, n):
@@ -170,6 +171,30 @@ class InteractiveShellTestCase(unittest.TestCase):
         enc = sys.stdin.encoding or "utf-8"
         expected = [ py3compat.unicode_to_str(e, enc) for e in expected ]
         self.assertEqual(hist, expected)
+        
+    def test_autoindent_recovery_after_EOF(self):
+        ip = get_ipython()
+        args = ['console', '--colors=NoColor']
+        # FIXME: remove workaround for 2.6 support
+        if sys.version_info[:2] > (2,6):
+            args = ['-m', 'IPython'] + args
+            cmd = sys.executable
+        else:
+            cmd = 'ipython'
+        t = 20
+        p = pexpect.spawn(cmd, args=args)
+        p.expect([r'In \[\d+\]', pexpect.EOF], timeout=t)
+        p.sendeof()
+        # say 'no' at the quit prompt
+        p.sendline('n')
+        p.expect([r'In \[\d+\]', pexpect.EOF], timeout=t)
+        p.sendline('for x in range(2):')
+        p.sendline('print(x)')
+        p.sendline('')
+        # check that the code executed and not an indent error
+        p.expect([r'0\s+1'], timeout=t)
+        if p.isalive():
+            p.terminate()
     
 class TerminalMagicsTestCase(unittest.TestCase):
     def test_paste_magics_message(self):
