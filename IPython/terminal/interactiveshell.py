@@ -503,11 +503,13 @@ class TerminalInteractiveShell(InteractiveShell):
                     prompt = self.separate_in + self.prompt_manager.render('in')
                 except:
                     self.showtraceback()
+
             try:
                 line = self.raw_input(prompt)
                 if self.exit_now:
                     # quick exit on sys.std[in|out] close
                     break
+
                 if self.autoindent:
                     self.rl_do_indent = False
 
@@ -521,11 +523,10 @@ class TerminalInteractiveShell(InteractiveShell):
                     more = False
                 except KeyboardInterrupt:
                     pass
+
             except EOFError:
                 if self.autoindent:
                     self.rl_do_indent = False
-                    if self.has_readline:
-                        self.readline_startup_hook(None)
                 self.write('\n')
                 self.exit()
             except bdb.BdbQuit:
